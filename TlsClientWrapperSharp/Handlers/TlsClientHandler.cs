@@ -57,6 +57,12 @@ namespace TlsClientWrapperSharp.Handlers
 
             var headersDictionary = request.Headers.ToDictionary(header => header.Key, header => string.Join(", ", header.Value));
 
+            if (request.Content?.Headers != null)
+                foreach (var header in request.Content.Headers)
+                {
+                    headersDictionary.Add(header.Key, header.Value.FirstOrDefault() ?? throw new InvalidOperationException());
+                }
+            
             var requestContent = request.Content != null ? await request.Content.ReadAsStringAsync(cancellationToken) : string.Empty;
 
             var sessionPayload = new TlsRequestMessage
@@ -73,7 +79,7 @@ namespace TlsClientWrapperSharp.Handlers
             var requestJson = JsonSerializer.Serialize(sessionPayload);
             var requestBytes = Encoding.UTF8.GetBytes(requestJson);
 
-            var responsePtr = TlsClientHandler.Request(requestBytes, SessionId);
+            var responsePtr = Request(requestBytes, SessionId);
             var responseJson = Marshal.PtrToStringAnsi(responsePtr) ?? throw new Exception("Failed to get response");
 
             var result = JsonSerializer.Deserialize<TlsResponseResponse>(responseJson) ?? throw new Exception("Failed to parse response");
