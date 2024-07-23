@@ -51,7 +51,7 @@ namespace TlsClientWrapperSharp.Handlers
         /// <param name="request">The HTTP request message.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The HTTP response message.</returns>
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected async Task<HttpResponseMessage> SendAsync(TlsHttpRequestMessage request, CancellationToken cancellationToken)
         {
             if (request.RequestUri == null) throw new NullReferenceException("RequestUri cannot be null");
 
