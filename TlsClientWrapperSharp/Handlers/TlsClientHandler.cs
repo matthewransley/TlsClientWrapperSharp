@@ -61,6 +61,12 @@ namespace TlsClientWrapperSharp.Handlers
             var httpHeaders = (HttpHeaders)request.Headers;
             var headersDictionary = httpHeaders.NonValidated.ToDictionary(header => header.Key, header => header.Value.ToString());
             
+            if (request.Content?.Headers != null)
+                foreach (var header in request.Content.Headers)
+                {
+                    headersDictionary.Add(header.Key, header.Value.FirstOrDefault() ?? throw new InvalidOperationException());
+                }
+
             var requestContent = request.Content != null ? await request.Content.ReadAsStringAsync(cancellationToken) : string.Empty;
 
             var sessionPayload = new TlsRequestMessage
