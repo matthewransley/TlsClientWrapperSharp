@@ -1,5 +1,8 @@
 ﻿using System.Net;
+using System.Net.Http.Headers;
+using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.JavaScript;
 using System.Text;
 using System.Text.Json;
 using TlsClientWrapperSharp.Helpers;
@@ -10,7 +13,7 @@ namespace TlsClientWrapperSharp.Handlers
     /// <summary>
     /// Custom HttpClientHandler that uses a TLS client DLL to send HTTP requests.
     /// </summary>
-    public partial class TlsClientHandler : HttpClientHandler
+    public partial class TlsClientHandler : DelegatingHandler
     {
         /// <summary>
         /// Imports the 'request' function from the TLS client DLL.
@@ -51,17 +54,12 @@ namespace TlsClientWrapperSharp.Handlers
         /// <param name="request">The HTTP request message.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The HTTP response message.</returns>
-        protected async Task<HttpResponseMessage> SendAsync(TlsHttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             if (request.RequestUri == null) throw new NullReferenceException("RequestUri cannot be null");
 
-            var headersDictionary = request.Headers.ToDictionary(header => header.Key, header => string.Join(", ", header.Value));
-
-            if (request.Content?.Headers != null)
-                foreach (var header in request.Content.Headers)
-                {
-                    headersDictionary.Add(header.Key, header.Value.FirstOrDefault() ?? throw new InvalidOperationException());
-                }
+            var httpHeaders = (HttpHeaders)request.Headers;
+            var headersDictionary = httpHeaders.NonValidated.ToDictionary(header => header.Key, header => header.Value.ToString());
             
             var requestContent = request.Content != null ? await request.Content.ReadAsStringAsync(cancellationToken) : string.Empty;
 
