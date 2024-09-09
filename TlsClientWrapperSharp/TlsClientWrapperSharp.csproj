@@ -16,15 +16,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="DLLs\" />
       <Folder Include="Exceptions\" />
       <Folder Include="Utils\" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Update="DLLs\tls-client-windows-64-1.7.6.dll">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
     </ItemGroup>
 
 </Project>

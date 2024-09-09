@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using TlsClientWrapperSharp.Helpers;
 using TlsClientWrapperSharp.Models;
+using TlsClientWrapperSharp.Services;
 
 namespace TlsClientWrapperSharp.Handlers
 {
@@ -15,24 +16,6 @@ namespace TlsClientWrapperSharp.Handlers
     /// </summary>
     public partial class TlsClientHandler : DelegatingHandler
     {
-        /// <summary>
-        /// Imports the 'request' function from the TLS client DLL.
-        /// </summary>
-        /// <param name="requestPayload">The request payload as a byte array.</param>
-        /// <param name="sessionId">The session ID.</param>
-        /// <returns>A pointer to the response data.</returns>
-        [LibraryImport("./DLLs/tls-client-windows-64-1.7.6.dll", EntryPoint = "request")]
-        [UnmanagedCallConv(CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
-        private static partial IntPtr Request([In] byte[] requestPayload, [MarshalAs(UnmanagedType.LPWStr)] string sessionId);
-
-        /// <summary>
-        /// Imports the 'freeMemory' function from the TLS client DLL.
-        /// </summary>
-        /// <param name="sessionId">The session ID.</param>
-        [LibraryImport("./DLLs/tls-client-windows-64-1.7.6.dll", EntryPoint = "freeMemory")]
-        [UnmanagedCallConv(CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
-        private static partial void FreeMemory([MarshalAs(UnmanagedType.LPWStr)] string sessionId);
-
         /// <summary>
         /// Gets or sets the proxy for the HTTP requests.
         /// </summary>
@@ -83,11 +66,11 @@ namespace TlsClientWrapperSharp.Handlers
             var requestJson = JsonSerializer.Serialize(sessionPayload);
             var requestBytes = Encoding.UTF8.GetBytes(requestJson);
 
-            var responsePtr = Request(requestBytes, SessionId);
+            var responsePtr = await TlsClientWrapper.SendRequest(requestBytes, SessionId);
             var responseJson = Marshal.PtrToStringAnsi(responsePtr) ?? throw new Exception("Failed to get response");
 
             var result = JsonSerializer.Deserialize<TlsResponseResponse>(responseJson) ?? throw new Exception("Failed to parse response");
-            FreeMemory(result.Id);
+            await TlsClientWrapper.ReleaseMemory(Encoding.UTF8.GetBytes(result.Id));
 
             var responseContent = Convert.FromBase64String(result.Body.Split("base64,")[1]);
             var responseStream = new MemoryStream(responseContent);
